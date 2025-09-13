@@ -1,13 +1,19 @@
-'use client';
+import React, { ReactNode, useEffect } from 'react';
+import { sdk } from '@farcaster/miniapp-sdk';
 
-import React, { ReactNode } from 'react';
-import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
-import { base } from 'wagmi/chains';
+export function FrameProvider({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    // Initialize the Farcaster mini app SDK
+    const initSDK = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error('Failed to initialize Farcaster SDK:', error);
+      }
+    };
+    
+    initSDK();
+  }, []);
 
-export function MiniKitContextProvider({ children }: { children: ReactNode }) {
-  return (
-    <MiniKitProvider apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY} chain={base}>
-      {children}
-    </MiniKitProvider>
-  );
+  return <>{children}</>;
 }

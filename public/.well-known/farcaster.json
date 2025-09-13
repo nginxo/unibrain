@@ -1,0 +1,18 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "UniBrain",
+    "iconUrl": "https://your-app-domain.com/icon.png",
+    "homeUrl": "https://your-app-domain.com",
+    "splashImageUrl": "https://your-app-domain.com/splash.png",
+    "splashBackgroundColor": "#FFFFFF",
+    "subtitle": "AI Content Marketplace",
+    "description": "A decentralized marketplace for AI-generated content and digital assets",
+    "primaryCategory": "marketplace",
+    "tags": ["ai", "marketplace", "nft", "content"],
+    "ogTitle": "UniBrain - AI Content Marketplace",
+    "ogDescription": "Discover, create, and trade AI-generated content in our decentralized marketplace",
+    "ogImageUrl": "https://your-app-domain.com/og-image.png",
+    "tagline": "Where AI meets creativity"
+  }
+}

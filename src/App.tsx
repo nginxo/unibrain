@@ -6,14 +6,8 @@ import NFTShowcase from './components/NFTShowcase';
 import UploadSection from './components/UploadSection';
 import Stats from './components/Stats';
 import Footer from './components/Footer';
-import { useEffect } from 'react';
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 function App() {
-  const { setFrameReady, isFrameReady } = useMiniKit();
-  useEffect(() => {
-    if (!isFrameReady) setFrameReady();
-  }, [isFrameReady, setFrameReady]);
   const [activeTab, setActiveTab] = useState('marketplace');
 
   return (
