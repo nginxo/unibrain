@@ -1,0 +1,11 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "redirects": [
+      {
+        "source": "/.well-known/farcaster.json",
+        "destination": "https://api.farcaster.xyz/miniapps/hosted-manifest/01993a9b-4686-abd9-cf2b-acd7c9681a0f",
+        "permanent": false
+      }
+    ]
+  }
+  
