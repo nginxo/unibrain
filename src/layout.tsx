@@ -22,12 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta property="twitter:image" content="https://your-app-domain.com/og-image.png" />
 
         {/* Farcaster Frame */}
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="https://your-app-domain.com/hero-image.png" />
-        <meta property="fc:frame:button:1" content="Launch App" />
-        <meta property="fc:frame:button:1:action" content="launch_frame" />
-        <meta property="fc:frame:button:1:target" content="https://your-app-domain.com" />
-        <meta property="fc:frame:button:1:post_url" content="https://your-app-domain.com/api/frame" />
+        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://your-app-domain.com/hero-image.png","button":{"title":"Open","action":{"type":"launch_frame","name":"UniBrain","url":"https://your-app-domain.com"}}}' />
       </head>
       <body>
         <FrameProvider>{children}</FrameProvider>
