@@ -2,9 +2,9 @@
   "frame": {
     "version": "1",
     "name": "UniBrain",
-    "iconUrl": "https://your-app-domain.com/icon.png",
-    "homeUrl": "https://your-app-domain.com",
-    "splashImageUrl": "https://your-app-domain.com/splash.png",
+    "iconUrl": "https://unibrain.vercel.app/icon.png",
+    "homeUrl": "https://unibrain.vercel.app",
+    "splashImageUrl": "https://unibrain.vercel.app/splash.png",
     "splashBackgroundColor": "#FFFFFF",
     "subtitle": "AI Content Marketplace",
     "description": "A decentralized marketplace for AI-generated content and digital assets",
@@ -12,7 +12,13 @@
     "tags": ["ai", "marketplace", "nft", "content"],
     "ogTitle": "UniBrain - AI Content Marketplace",
     "ogDescription": "Discover, create, and trade AI-generated content in our decentralized marketplace",
-    "ogImageUrl": "https://your-app-domain.com/og-image.png",
-    "tagline": "Where AI meets creativity"
+    "ogImageUrl": "https://unibrain.vercel.app/og-image.png",
+    "tagline": "Where AI meets creativity",
+    "requiredChains": ["eip155:8453"],
+    "requiredCapabilities": ["share_extension"],
+    "shareExtension": {
+      "title": "Share to UniBrain",
+      "description": "Share this cast to UniBrain marketplace"
+    }
   }
 }
