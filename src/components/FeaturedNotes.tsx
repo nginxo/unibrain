@@ -1,9 +1,9 @@
 import { FC, useEffect, useState } from 'react';
 import { Download, Eye, BookOpen, ShoppingCart, DollarSign } from 'lucide-react';
-import { getSupabase } from '../lib/supabase';
 import { Document } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { paymentService } from '../services/paymentService';
+import { database } from '../services/databaseAdapter';
 
 const FeaturedNotes: FC = () => {
   const { walletAddress, isAuthenticated } = useAuth();
@@ -18,21 +18,8 @@ const FeaturedNotes: FC = () => {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const supabase = getSupabase();
-      const { data, error } = await supabase
-        .from('documents')
-        .select(`
-          *,
-          users:user_id (
-            username,
-            wallet_address
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(12);
-
-      if (error) throw error;
-      setDocuments(data || []);
+      const data = await database.getDocuments(12, 0);
+      setDocuments(data);
     } catch (e) {
       console.error('Error loading documents:', e);
     } finally {

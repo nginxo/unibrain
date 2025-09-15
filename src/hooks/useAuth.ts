@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { getSupabase } from '../lib/supabase';
 import { connectWalletOnBase } from '../lib/wallet';
 import { User } from '../types/database';
+import { database } from '../services/databaseAdapter';
 
 interface AuthContextType {
   user: User | null;
@@ -72,19 +72,9 @@ export const useAuthState = () => {
 
   const loadUserProfile = async (wallet: string) => {
     try {
-      const supabase = getSupabase();
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', wallet.toLowerCase())
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
-        setUser(data);
+      const userData = await database.getUser(wallet);
+      if (userData) {
+        setUser(userData);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -94,22 +84,12 @@ export const useAuthState = () => {
   };
 
   const createUserProfile = async (wallet: string): Promise<User> => {
-    const supabase = getSupabase();
     const userData = {
       wallet_address: wallet.toLowerCase(),
-      username: `user_${wallet.slice(-6)}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      username: `user_${wallet.slice(-6)}`
     };
 
-    const { data, error } = await supabase
-      .from('users')
-      .insert(userData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    return await database.createUser(userData);
   };
 
   const login = async () => {
@@ -122,16 +102,8 @@ export const useAuthState = () => {
       // Try to load existing user or create new one
       let userData = user;
       if (!userData) {
-        const supabase = getSupabase();
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('wallet_address', wallet.toLowerCase())
-          .single();
-
-        if (data) {
-          userData = data;
-        } else {
+        userData = await database.getUser(wallet);
+        if (!userData) {
           userData = await createUserProfile(wallet);
         }
       }
@@ -155,21 +127,10 @@ export const useAuthState = () => {
     if (!user || !walletAddress) return;
 
     try {
-      const supabase = getSupabase();
-      const updatedData = {
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('users')
-        .update(updatedData)
-        .eq('wallet_address', walletAddress.toLowerCase())
-        .select()
-        .single();
-
-      if (error) throw error;
-      setUser(data);
+      const updatedUser = await database.updateUser(walletAddress, updates);
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
     } catch (error) {
       console.error('Profile update error:', error);
       throw error;

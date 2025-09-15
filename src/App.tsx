@@ -7,6 +7,7 @@ import UploadSection from './components/UploadSection';
 import Stats from './components/Stats';
 import Footer from './components/Footer';
 import { WalletDebug } from './components/WalletDebug';
+import { DatabaseStatus } from './components/DatabaseStatus';
 import { useFarcasterContext } from './hooks/useFarcasterContext';
 import { AuthProvider } from './providers/AuthProvider';
 
@@ -84,8 +85,9 @@ function App() {
         
         <Footer />
         
-        {/* Debug component for development */}
+        {/* Debug components for development */}
         <WalletDebug />
+        <DatabaseStatus />
       </div>
     </AuthProvider>
   );

@@ -1,8 +1,8 @@
 import { FC, useEffect, useState } from 'react';
 import { Sparkles, TrendingUp, Clock, Zap } from 'lucide-react';
-import { nftService } from '../services/nftService';
 import { NFT } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
+import { database } from '../services/databaseAdapter';
 
 const NFTShowcase: FC = () => {
   const { isAuthenticated } = useAuth();
@@ -16,7 +16,7 @@ const NFTShowcase: FC = () => {
   const loadNFTs = async () => {
     setLoading(true);
     try {
-      const data = await nftService.getAllNFTs(20);
+      const data = await database.getNFTs(20);
       setNfts(data);
     } catch (error) {
       console.error('Error loading NFTs:', error);

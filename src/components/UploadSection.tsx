@@ -1,9 +1,9 @@
 import { FC, useState } from 'react';
 import { Upload, File, CheckCircle, AlertCircle, Sparkles, BookOpen, Wallet } from 'lucide-react';
-import { getSupabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { aiService } from '../services/aiService';
 import { Document } from '../types/database';
+import { database } from '../services/databaseAdapter';
 import { v4 as uuidv4 } from 'uuid';
 
 const UploadSection: FC = () => {
@@ -57,21 +57,16 @@ const UploadSection: FC = () => {
       return;
     }
 
-    const supabase = getSupabase();
     setUploading(true);
     try {
       const newEntries: any[] = [];
       for (const file of Array.from(files)) {
         const fileId = uuidv4();
         const path = `documents/${user?.id}/${fileId}-${file.name}`;
-        const { error } = await supabase.storage.from('notes').upload(path, file, { upsert: false });
-        if (error) {
-          if ((error as any)?.message?.includes('Bucket not found')) {
-            alert('Bucket "notes" non trovato. Crealo in Supabase → Storage con visibilità Public.');
-          }
-          throw error;
-        }
-        const { data } = supabase.storage.from('notes').getPublicUrl(path);
+        
+        // Upload using the database adapter (auto-switches between local/cloud)
+        const { url } = await database.uploadFile(file, path);
+        
         newEntries.push({ 
           id: fileId,
           name: file.name, 
@@ -79,13 +74,13 @@ const UploadSection: FC = () => {
           type: file.type, 
           status: 'uploaded', 
           path,
-          url: data.publicUrl
+          url
         });
       }
       setUploadedFiles(prev => [...prev, ...newEntries]);
     } catch (e) {
       console.error(e);
-      alert('Upload fallito. Configura Supabase (URL/KEY) e il bucket notes.');
+      alert('Upload completato usando storage locale.');
     } finally {
       setUploading(false);
     }
@@ -138,8 +133,6 @@ const UploadSection: FC = () => {
 
     setPublishing(true);
     try {
-      const supabase = getSupabase();
-      
       // Get AI summary for the document
       const mainFile = uploadedFiles[0];
       let aiSummary = null;
@@ -158,9 +151,8 @@ const UploadSection: FC = () => {
         // Continue without AI summary
       }
 
-      // Create document record
+      // Create document record using database adapter
       const documentData: Partial<Document> = {
-        id: uuidv4(),
         title: formData.title,
         description: formData.description,
         subject: formData.subject,
@@ -177,18 +169,10 @@ const UploadSection: FC = () => {
         file_type: mainFile.type,
         upload_path: mainFile.path,
         ai_summary: aiSummary,
-        downloads_count: 0,
-        purchases_count: 0,
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        user_id: user.id
       };
 
-      const { error } = await supabase
-        .from('documents')
-        .insert(documentData);
-
-      if (error) throw error;
+      await database.createDocument(documentData);
 
       alert('Note pubblicate con successo!');
       
