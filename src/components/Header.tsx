@@ -1,6 +1,6 @@
-import { FC, useEffect, useState } from 'react';
-import { Wallet, User, Bell } from 'lucide-react';
-import { connectWalletOnBase } from '../lib/wallet';
+import { FC } from 'react';
+import { Wallet, User, Bell, LogOut } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import logo from './logo.png';
 
 interface HeaderProps {
@@ -9,31 +9,18 @@ interface HeaderProps {
 }
 
 const Header: FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
-  const [account, setAccount] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { user, isAuthenticated, isLoading, walletAddress, login, logout } = useAuth();
 
   const shorten = (addr: string) => `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 
-  const connectWallet = async () => {
+  const handleConnect = async () => {
     try {
-      setIsConnecting(true);
-      const addr = await connectWalletOnBase();
-      setAccount(addr);
+      await login();
     } catch (err) {
-      console.error('Wallet connect error', err);
+      console.error('Login error:', err);
       alert('Connessione wallet fallita. Verifica MetaMask e la rete Base.');
-    } finally {
-      setIsConnecting(false);
     }
   };
-
-  useEffect(() => {
-    const ethereum = (window as any).ethereum as { on?: (ev: string, cb: any) => void; removeListener?: (ev: string, cb: any) => void } | undefined;
-    if (!ethereum) return;
-    const handler = (accounts: string[]) => setAccount(accounts?.[0] ?? null);
-    ethereum.on?.('accountsChanged', handler);
-    return () => ethereum?.removeListener?.('accountsChanged', handler);
-  }, []);
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -83,28 +70,43 @@ const Header: FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            <button className="relative p-2 text-slate-600 hover:text-blue-600 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-            </button>
-            {account ? (
-              <div className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-full">
-                <Wallet className="w-4 h-4" />
-                <span className="hidden sm:inline">{shorten(account)}</span>
+            {isAuthenticated && (
+              <button className="relative p-2 text-slate-600 hover:text-blue-600 transition-colors">
+                <Bell className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+              </button>
+            )}
+            
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-full">
+                  <Wallet className="w-4 h-4" />
+                  <span className="hidden sm:inline">{walletAddress && shorten(walletAddress)}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-2 text-slate-600 hover:text-red-600 transition-colors"
+                  title="Disconnect"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
             ) : (
               <button
-                onClick={connectWallet}
-                disabled={isConnecting}
+                onClick={handleConnect}
+                disabled={isLoading}
                 className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-4 py-2 rounded-full hover:shadow-lg transition-all disabled:opacity-60"
               >
                 <Wallet className="w-4 h-4" />
-                <span className="hidden sm:inline">{isConnecting ? 'Connessione…' : 'Connetti Wallet'}</span>
+                <span className="hidden sm:inline">{isLoading ? 'Connessione…' : 'Connetti Wallet'}</span>
               </button>
             )}
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
+            
+            {isAuthenticated && (
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+            )}
           </div>
         </div>
 

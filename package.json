@@ -12,9 +12,18 @@
   "dependencies": {
     "@farcaster/frame-sdk": "latest",
     "@supabase/supabase-js": "^2.57.4",
+    "@web3-react/core": "^8.2.3",
+    "@web3-react/injected-connector": "^6.0.7",
+    "@web3-react/walletconnect-connector": "^6.2.13",
+    "axios": "^1.12.2",
+    "crypto-js": "^4.2.0",
+    "ethers": "^6.15.0",
     "lucide-react": "0.544.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.1",
+    "uuid": "^13.0.0",
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
