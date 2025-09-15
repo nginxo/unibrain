@@ -3,13 +3,16 @@
 UniBrain is a web app designed for university students to share and access their notes online.  
 Built with modern web technologies for speed, simplicity, and collaboration.
 
-## Urbe.eth
+# Urbe.eth
 
-This web app was made in Urbe.eth's campus, where they helped us polish our ideas and develop them to ship them online.
-Check them out!
+This project was built at Urbe.eth’s campus, where their team supported us in refining our ideas and turning them into a live product.
 
-X: https://x.com/urbeEth
-Farcaster: https://farcaster.xyz/urbe-eth
+Go check them out!
+
+X: https://x.com/urbeEth 
+
+Farcaster: https://farcaster.xyz/urbe-eth 
+
 Website: https://urbe.build/
 
 ## Features
