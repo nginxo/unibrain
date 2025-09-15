@@ -6,6 +6,7 @@ import NFTShowcase from './components/NFTShowcase';
 import UploadSection from './components/UploadSection';
 import Stats from './components/Stats';
 import Footer from './components/Footer';
+import { WalletDebug } from './components/WalletDebug';
 import { useFarcasterContext } from './hooks/useFarcasterContext';
 import { AuthProvider } from './providers/AuthProvider';
 
@@ -82,6 +83,9 @@ function App() {
         )}
         
         <Footer />
+        
+        {/* Debug component for development */}
+        <WalletDebug />
       </div>
     </AuthProvider>
   );

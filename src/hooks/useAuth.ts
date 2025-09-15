@@ -39,7 +39,36 @@ export const useAuthState = () => {
     } else {
       setIsLoading(false);
     }
-  }, []);
+
+    // Listen for account changes in MetaMask
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length === 0) {
+          // User disconnected wallet
+          logout();
+        } else if (accounts[0] !== walletAddress) {
+          // User switched accounts
+          setWalletAddress(accounts[0]);
+          localStorage.setItem('connected_wallet', accounts[0]);
+          loadUserProfile(accounts[0]);
+        }
+      };
+
+      const handleChainChanged = () => {
+        // Reload the page when chain changes
+        window.location.reload();
+      };
+
+      window.ethereum.on?.('accountsChanged', handleAccountsChanged);
+      window.ethereum.on?.('chainChanged', handleChainChanged);
+
+      // Cleanup listeners
+      return () => {
+        window.ethereum?.removeListener?.('accountsChanged', handleAccountsChanged);
+        window.ethereum?.removeListener?.('chainChanged', handleChainChanged);
+      };
+    }
+  }, [walletAddress]);
 
   const loadUserProfile = async (wallet: string) => {
     try {

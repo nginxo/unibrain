@@ -1,7 +1,11 @@
 import { FC } from 'react';
 import { TrendingUp, Users, Star, ArrowRight } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { WalletStatus } from './WalletStatus';
 
 const Hero: FC = () => {
+  const { isAuthenticated, isLoading, walletAddress } = useAuth();
+  
   return (
     <section className="container mx-auto px-4 py-16">
       <div className="text-center max-w-4xl mx-auto">
@@ -26,7 +30,7 @@ const Hero: FC = () => {
           e creare automaticamente NFT unici dai tuoi appunti più preziosi.
         </p>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
+        <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-8">
           <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center space-x-2">
             <span>Esplora Marketplace</span>
             <ArrowRight className="w-5 h-5" />
@@ -34,6 +38,15 @@ const Hero: FC = () => {
           <button className="w-full sm:w-auto border-2 border-slate-300 text-slate-700 px-8 py-4 rounded-full font-semibold hover:border-blue-400 hover:text-blue-600 transition-all">
             Carica le tue Note
           </button>
+        </div>
+
+        {/* Wallet Status */}
+        <div className="mb-16 max-w-md mx-auto">
+          <WalletStatus 
+            isConnected={isAuthenticated}
+            isLoading={isLoading}
+            address={walletAddress}
+          />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

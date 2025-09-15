@@ -16,9 +16,23 @@ const Header: FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   const handleConnect = async () => {
     try {
       await login();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      alert('Connessione wallet fallita. Verifica MetaMask e la rete Base.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Connessione wallet fallita.';
+      
+      if (err.message?.includes('MetaMask non trovato')) {
+        errorMessage = 'MetaMask non installato. Installa MetaMask dal sito ufficiale metamask.io';
+      } else if (err.message?.includes('rifiutata')) {
+        errorMessage = 'Connessione rifiutata. Accetta la connessione in MetaMask.';
+      } else if (err.message?.includes('già in corso')) {
+        errorMessage = 'Richiesta già in corso. Controlla MetaMask e completa la richiesta.';
+      } else if (err.message?.includes('rete Base')) {
+        errorMessage = 'Impossibile configurare la rete Base. Aggiungi manualmente la rete Base in MetaMask.';
+      }
+      
+      alert(errorMessage);
     }
   };
   return (
