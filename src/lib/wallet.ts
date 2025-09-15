@@ -1,4 +1,5 @@
 export const BASE_MAINNET = {
+  id: 8453,
   chainId: '0x2105', // 8453
   chainName: 'Base Mainnet',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
@@ -6,19 +7,46 @@ export const BASE_MAINNET = {
   blockExplorerUrls: ['https://base.blockscout.com/']
 };
 
-const getEthereum = () => (window as any).ethereum as {
-  request?: (args: { method: string; params?: any[] | object }) => Promise<any>;
-} | undefined;
+// Declare ethereum interface properly
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] | object }) => Promise<any>;
+      on?: (event: string, callback: (data: any) => void) => void;
+      removeListener?: (event: string, callback: (data: any) => void) => void;
+      isMetaMask?: boolean;
+    };
+  }
+}
+
+const getEthereum = () => window.ethereum;
+
+export const isMetaMaskInstalled = (): boolean => {
+  return typeof window !== 'undefined' && Boolean(window.ethereum?.isMetaMask);
+};
 
 export const ensureBaseNetwork = async () => {
   const ethereum = getEthereum();
-  if (!ethereum?.request) throw new Error('MetaMask non rilevato.');
+  if (!ethereum?.request) {
+    throw new Error('MetaMask non rilevato. Installa MetaMask per continuare.');
+  }
+  
   try {
-    await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: BASE_MAINNET.chainId }] });
+    await ethereum.request({ 
+      method: 'wallet_switchEthereumChain', 
+      params: [{ chainId: BASE_MAINNET.chainId }] 
+    });
   } catch (switchErr: any) {
     // 4902 = chain not added
     if (switchErr?.code === 4902) {
-      await ethereum.request({ method: 'wallet_addEthereumChain', params: [BASE_MAINNET] });
+      try {
+        await ethereum.request({ 
+          method: 'wallet_addEthereumChain', 
+          params: [BASE_MAINNET] 
+        });
+      } catch (addErr) {
+        throw new Error('Impossibile aggiungere la rete Base. Aggiungila manualmente.');
+      }
     } else {
       throw switchErr;
     }
@@ -26,12 +54,37 @@ export const ensureBaseNetwork = async () => {
 };
 
 export const connectWalletOnBase = async (): Promise<string> => {
+  if (!isMetaMaskInstalled()) {
+    throw new Error('MetaMask non trovato. Installa MetaMask dal sito ufficiale.');
+  }
+
   const ethereum = getEthereum();
-  if (!ethereum?.request) throw new Error('MetaMask non rilevato.');
-  await ensureBaseNetwork();
-  const accounts: string[] = await ethereum.request({ method: 'eth_requestAccounts' });
-  if (!accounts?.length) throw new Error('Nessun account selezionato');
-  return accounts[0];
+  if (!ethereum?.request) {
+    throw new Error('MetaMask non disponibile.');
+  }
+
+  try {
+    // First request accounts
+    const accounts: string[] = await ethereum.request({ 
+      method: 'eth_requestAccounts' 
+    });
+    
+    if (!accounts?.length) {
+      throw new Error('Nessun account selezionato in MetaMask.');
+    }
+
+    // Then ensure we're on the right network
+    await ensureBaseNetwork();
+    
+    return accounts[0];
+  } catch (error: any) {
+    if (error.code === 4001) {
+      throw new Error('Connessione rifiutata dall\'utente.');
+    } else if (error.code === -32002) {
+      throw new Error('Richiesta già in corso. Controlla MetaMask.');
+    }
+    throw error;
+  }
 };
 
 const MERCHANT_KEY = 'STUDYNFT_MERCHANT_ADDRESS';

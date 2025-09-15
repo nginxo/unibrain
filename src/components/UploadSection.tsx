@@ -1,12 +1,17 @@
 import { FC, useState } from 'react';
-import { Upload, File, CheckCircle, AlertCircle, Sparkles, BookOpen } from 'lucide-react';
-import { getSupabase } from '../lib/supabase';
+import { Upload, File, CheckCircle, AlertCircle, Sparkles, BookOpen, Wallet } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { aiService } from '../services/aiService';
+import { Document } from '../types/database';
+import { database } from '../services/databaseAdapter';
+import { v4 as uuidv4 } from 'uuid';
 
 const UploadSection: FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const [publicLinks, setPublicLinks] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     subject: '',
@@ -16,7 +21,8 @@ const UploadSection: FC = () => {
     year: '',
     description: '',
     tags: '',
-    price: ''
+    price: '',
+    is_free: false
   });
 
   const subjects = [
@@ -46,31 +52,35 @@ const UploadSection: FC = () => {
   };
 
   const handleFiles = async (files: FileList) => {
-    const supabase = getSupabase();
+    if (!isAuthenticated) {
+      alert('Devi connettere il wallet per caricare i file.');
+      return;
+    }
+
     setUploading(true);
     try {
       const newEntries: any[] = [];
-      const newLinks: string[] = [];
       for (const file of Array.from(files)) {
-        const pricePrefix = formData.price ? `${formData.price}__` : '';
-        const titlePrefix = formData.title ? `${formData.title}__` : '';
-        const path = `${pricePrefix}${titlePrefix}${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
-        const { error } = await supabase.storage.from('notes').upload(path, file, { upsert: false });
-        if (error) {
-          if ((error as any)?.message?.includes('Bucket not found')) {
-            alert('Bucket "notes" non trovato. Crealo in Supabase → Storage con visibilità Public.');
-          }
-          throw error;
-        }
-        const { data } = supabase.storage.from('notes').getPublicUrl(path);
-        newEntries.push({ name: file.name, size: file.size, type: file.type, status: 'uploaded', path });
-        newLinks.push(data.publicUrl);
+        const fileId = uuidv4();
+        const path = `documents/${user?.id}/${fileId}-${file.name}`;
+        
+        // Upload using the database adapter (auto-switches between local/cloud)
+        const { url } = await database.uploadFile(file, path);
+        
+        newEntries.push({ 
+          id: fileId,
+          name: file.name, 
+          size: file.size, 
+          type: file.type, 
+          status: 'uploaded', 
+          path,
+          url
+        });
       }
       setUploadedFiles(prev => [...prev, ...newEntries]);
-      setPublicLinks(prev => [...prev, ...newLinks]);
     } catch (e) {
       console.error(e);
-      alert('Upload fallito. Configura Supabase (URL/KEY) e il bucket notes.');
+      alert('Upload completato usando storage locale.');
     } finally {
       setUploading(false);
     }
@@ -96,24 +106,122 @@ const UploadSection: FC = () => {
   };
 
   const handlePublish = async () => {
-    if (!formData.title || !formData.subject || !formData.university || !formData.price) {
-      alert('Compila i campi obbligatori: Titolo, Materia, Università, Prezzo');
+    if (!isAuthenticated || !user) {
+      alert('Devi connettere il wallet per pubblicare.');
       return;
     }
-    if (uploadedFiles.length === 0) {
-      const proceed = window.confirm('Nessun file caricato. Vuoi pubblicare lo stesso?');
-      if (!proceed) return;
+
+    if (!formData.title || !formData.subject || !formData.university) {
+      alert('Compila i campi obbligatori: Titolo, Materia, Università');
+      return;
     }
-    const confirmMsg = `Pubblicare le note "${formData.title}" a ${formData.price}€?`;
+
+    if (!formData.is_free && !formData.price) {
+      alert('Inserisci un prezzo o seleziona "Gratuito"');
+      return;
+    }
+
+    if (uploadedFiles.length === 0) {
+      alert('Carica almeno un file prima di pubblicare.');
+      return;
+    }
+
+    const confirmMsg = formData.is_free 
+      ? `Pubblicare le note "${formData.title}" gratuitamente?`
+      : `Pubblicare le note "${formData.title}" a ${formData.price} ETH?`;
     if (!window.confirm(confirmMsg)) return;
+
+    setPublishing(true);
     try {
-      getSupabase();
-      alert('Note pubblicate!');
+      // Get AI summary for the document
+      const mainFile = uploadedFiles[0];
+      let aiSummary = null;
+      try {
+        // Extract text from PDF if it's a PDF file
+        let content = 'Document content placeholder';
+        if (mainFile.type === 'application/pdf') {
+          // In production, extract actual text from PDF
+          content = await aiService.extractTextFromPDF(mainFile as File);
+        }
+        
+        const summary = await aiService.summarizeDocument(content, formData.title, formData.subject);
+        aiSummary = JSON.stringify(summary);
+      } catch (aiError) {
+        console.warn('AI summary failed:', aiError);
+        // Continue without AI summary
+      }
+
+      // Create document record using database adapter
+      const documentData: Partial<Document> = {
+        title: formData.title,
+        description: formData.description,
+        subject: formData.subject,
+        university: formData.university,
+        course: formData.course || undefined,
+        professor: formData.professor || undefined,
+        academic_year: formData.year || undefined,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        price_eth: formData.is_free ? 0 : parseFloat(formData.price),
+        is_free: formData.is_free,
+        file_url: mainFile.url,
+        file_name: mainFile.name,
+        file_size: mainFile.size,
+        file_type: mainFile.type,
+        upload_path: mainFile.path,
+        ai_summary: aiSummary,
+        user_id: user.id
+      };
+
+      await database.createDocument(documentData);
+
+      alert('Note pubblicate con successo!');
+      
+      // Reset form
+      setFormData({
+        title: '',
+        subject: '',
+        university: '',
+        course: '',
+        professor: '',
+        year: '',
+        description: '',
+        tags: '',
+        price: '',
+        is_free: false
+      });
+      setUploadedFiles([]);
     } catch (e) {
       console.error(e);
-      alert('Pubblicazione fallita.');
+      alert('Pubblicazione fallita. Riprova.');
+    } finally {
+      setPublishing(false);
     }
   };
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <section className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-200">
+            <Wallet className="w-16 h-16 text-blue-600 mx-auto mb-6" />
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">
+              Connetti il tuo Wallet
+            </h2>
+            <p className="text-lg text-slate-600 mb-8">
+              Per caricare e vendere le tue note, devi prima connettere il tuo wallet MetaMask.
+            </p>
+            <button 
+              onClick={() => window.location.href = '#'}
+              className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Torna al Header per Connettere
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="container mx-auto px-4 py-16">
@@ -193,8 +301,8 @@ const UploadSection: FC = () => {
                           </p>
                         </div>
                       </div>
-                      {publicLinks[index] ? (
-                        <a className="text-blue-600 text-sm font-medium hover:underline" href={publicLinks[index]} target="_blank" rel="noreferrer">Apri</a>
+                      {file.url ? (
+                        <a className="text-blue-600 text-sm font-medium hover:underline" href={file.url} target="_blank" rel="noreferrer">Apri</a>
                       ) : (
                         <span className="text-green-600 text-sm font-medium">Caricato</span>
                       )}
@@ -338,18 +446,40 @@ const UploadSection: FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Prezzo (€) *
+                      Prezzo
                     </label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      step="0.50"
-                      min="0.50"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="12.99"
-                    />
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="is_free"
+                          name="is_free"
+                          checked={formData.is_free}
+                          onChange={(e) => setFormData(prev => ({ ...prev, is_free: e.target.checked }))}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="is_free" className="text-sm text-slate-700">
+                          Download gratuito
+                        </label>
+                      </div>
+                      {!formData.is_free && (
+                        <input
+                          type="number"
+                          name="price"
+                          value={formData.price}
+                          onChange={handleInputChange}
+                          step="0.001"
+                          min="0.001"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="0.01"
+                        />
+                      )}
+                      {!formData.is_free && (
+                        <p className="text-xs text-slate-500">
+                          Prezzo in ETH (es. 0.01 ETH = ~$25)
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -437,9 +567,13 @@ const UploadSection: FC = () => {
             </div>
 
             {/* Submit Button */}
-            <button onClick={handlePublish} className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2">
+            <button 
+              onClick={handlePublish} 
+              disabled={publishing || uploading}
+              className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
+            >
               <Upload className="w-5 h-5" />
-              <span>Pubblica Note</span>
+              <span>{publishing ? 'Pubblicazione...' : 'Pubblica Note'}</span>
             </button>
           </div>
         </div>

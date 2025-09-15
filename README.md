@@ -113,4 +113,3 @@ Update `.env` with your project’s URL and anon key.
 - [TypeScript Documentation](https://www.typescriptlang.org/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
 
-

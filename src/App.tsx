@@ -6,7 +6,10 @@ import NFTShowcase from './components/NFTShowcase';
 import UploadSection from './components/UploadSection';
 import Stats from './components/Stats';
 import Footer from './components/Footer';
+import { WalletDebug } from './components/WalletDebug';
+import { DatabaseStatus } from './components/DatabaseStatus';
 import { useFarcasterContext } from './hooks/useFarcasterContext';
+import { AuthProvider } from './providers/AuthProvider';
 
 function App() {
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -60,27 +63,33 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-      
-      {activeTab === 'marketplace' && (
-        <>
-          <Hero />
-          <Stats />
-          <FeaturedNotes />
-        </>
-      )}
-      
-      {activeTab === 'nft' && (
-        <NFTShowcase />
-      )}
-      
-      {activeTab === 'upload' && (
-        <UploadSection />
-      )}
-      
-      <Footer />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        {activeTab === 'marketplace' && (
+          <>
+            <Hero />
+            <Stats />
+            <FeaturedNotes />
+          </>
+        )}
+        
+        {activeTab === 'nft' && (
+          <NFTShowcase />
+        )}
+        
+        {activeTab === 'upload' && (
+          <UploadSection />
+        )}
+        
+        <Footer />
+        
+        {/* Debug components for development */}
+        <WalletDebug />
+        <DatabaseStatus />
+      </div>
+    </AuthProvider>
   );
 }
 
