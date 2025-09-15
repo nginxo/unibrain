@@ -1,72 +1,91 @@
-# UniBrain - Farcaster Mini App
+# UniBrain 📄
 
-A decentralized marketplace for AI-generated content built as a Farcaster mini app.
+UniBrain is a web app designed for university students to share and access their notes online.  
+Built with modern web technologies for speed, simplicity, and collaboration.
+
+# Urbe.eth
+
+This project was built at Urbe.eth’s campus, where their team supported us in refining our ideas and turning them into a live product.
+
+Go check them out!
+
+X: https://x.com/urbeEth 
+
+Farcaster: https://farcaster.xyz/urbe-eth 
+
+Website: https://urbe.build/
 
 ## Features
 
-- 🎯 Farcaster Mini App integration
 - ⚡️ Vite for fast development and building
 - ⚛️ React 18 with TypeScript
 - 🎨 Tailwind CSS for styling
 - 🔧 ESLint for code linting
-- 📦 Modern build setup
+- 📦 Supabase for storage & authentication (optional)
 
-## Getting Started
+## Getting Started (Run Locally)
 
-1. Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/nginxo/unibrain.git
+   cd unibrain
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Set up environment variables:
+3. **Set up environment variables**  
    Create a `.env` file in the root directory with:
    ```env
-   VITE_APP_URL=https://your-app-domain.com
+   VITE_APP_URL=http://localhost:5173
    VITE_APP_NAME=UniBrain
-   VITE_HERO_IMAGE=https://your-app-domain.com/hero-image.png
-   VITE_SPLASH_IMAGE=https://your-app-domain.com/splash-image.png
+   VITE_HERO_IMAGE=/hero.png
+   VITE_SPLASH_IMAGE=/splash.png
    VITE_SPLASH_BG_COLOR=#ffffff
    VITE_SUPABASE_URL=your-supabase-url
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-3. Start the development server:
+   > If you don’t plan to use Supabase, you can leave those fields empty or remove them.
+
+4. **Start the development server**
    ```bash
    npm run dev
    ```
 
-4. Open your browser and visit `http://localhost:5173`
+5. Open your browser and visit 👉 [http://localhost:5173](http://localhost:5173)
 
-## Farcaster Mini App Setup
+## Project Structure
 
-This app is configured as a Farcaster mini app with the following features:
+```
+├── public/          # Static assets
+├── src/
+│   ├── components/  # Reusable UI components
+│   ├── pages/       # Main app pages
+│   ├── lib/         # Utilities and helpers
+│   └── App.tsx      # Root component
+├── .env             # Environment variables
+├── package.json
+└── vite.config.ts
+```
 
-- **Frame Metadata**: Proper Open Graph and Farcaster frame meta tags
-- **Frame SDK**: Uses `@farcaster/frame-sdk` for frame interactions
-- **Launch Frame**: Configured to launch as a mini app within Farcaster
-- **API Endpoints**: Frame API endpoint for handling user interactions
+## Available Scripts
 
-### Frame Configuration
+- `npm run dev` → Start development server
+- `npm run build` → Build for production
+- `npm run preview` → Preview production build
+- `npm run lint` → Run ESLint
 
-The app includes:
-- Hero image for frame display
-- Launch button with proper action
-- Frame API endpoint at `/api/frame`
-- Proper metadata for Farcaster discovery
+## Optional: Supabase Setup
 
-### Deployment
+If you want to enable Supabase for storing notes:
 
-1. Deploy your app to a public URL (Vercel, Netlify, etc.)
-2. Update the environment variables with your actual domain
-3. Ensure your frame images are accessible at the specified URLs
-4. Test the frame in Farcaster by sharing the URL
-
-## Supabase Setup (Optional)
-
-If using Supabase for data storage:
-
-1. Supabase Dashboard → Storage → Create bucket: `notes` (Public)
-2. Policies (SQL):
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)  
+2. Create a new project  
+3. Create a **bucket** in Storage named `notes` (set it as Public)  
+4. Add policies:
 
 ```sql
 alter table storage.objects enable row level security;
@@ -84,12 +103,7 @@ to public
 with check (bucket_id = 'notes');
 ```
 
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+Update `.env` with your project’s URL and anon key.
 
 ## Learn More
 
@@ -98,5 +112,4 @@ with check (bucket_id = 'notes');
 - [React Documentation](https://react.dev/)
 - [TypeScript Documentation](https://www.typescriptlang.org/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
-
 
